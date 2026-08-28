@@ -1,0 +1,178 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`committed fixtures > anchor-constraint > renders the golden text serialisation 1`] = `
+"signature         622vdcvGPw5EtWbWPgMpKHrstYaii8ssWFoKkK1jJLRQDCSwhn4tD88fZ92khrnXJNyZCg7yHTeT8u2yDgVPk46U
+slot              442,375,242 · 2026-08-28T16:03:52.000Z · v0 tx
+status            FAILED
+error             {"InstructionError":[2,{"Custom":2015}]}
+fee               0.000005 SOL (charged despite the failure) · 74,285 CU consumed
+
+why               Instruction #2 (3FhP…vUsm) failed: DeadlineExceeded (2015): Current slot exceeds deadline.
+
+#0 ↩ Compute Budget  (ran, then undone)
+#1 ↩ 3FhP…vUsm · 59,394 CU  (ran, then undone)
+   ├─ ↩ System Program — createAccount
+   └─ ↩ Orca Whirlpool
+      ├─ ↩ SPL Token — transferChecked
+      └─ ↩ SPL Token — transferChecked
+#2 ✗ 3FhP…vUsm · 14,741 CU  ◀ FAILED HERE — custom program error: 0x7df
+#3 – System Program — transfer  (never ran)
+
+   ↩ ran, then undone · ✗ failed · – never ran
+
+failing program   3FhPZDtj1CQsVaXE3BCbF96d4v4svfJMMYmgQsJjvUsm (3FhP…vUsm) · depth 1
+identified via    first \`failed:\` log frame, cross-checked against stackHeight — CONFIRMED
+anchor error      DeadlineExceeded (2015) — "Current slot exceeds deadline" · thrown in programs/graph-executor/src/lib.rs:364 · from the AnchorError log line
+custom code       2015 (hex 0x7df)
+balance changes   9jZd…NHyc (signer)  −0.000005 SOL"
+`;
+
+exports[`committed fixtures > anchor-custom > renders the golden text serialisation 1`] = `
+"signature         2hirAEtVxpEEQwHH54FS3cWFC4mGAm2zDuhADwJ56VYiUeiaNEtaMsAekQdEyR4EMxzKk9JRBAuDRqRvGck9ANAA
+slot              442,373,788 · 2026-08-28T15:56:02.000Z · v0 tx
+status            FAILED
+error             {"InstructionError":[4,{"Custom":6010}]}
+fee               0.000099684 SOL (charged despite the failure) · 413,906 CU consumed
+
+why               Instruction #4 (proV…CX3u) failed: MinReturnNotReached (6010): Min return not reached.
+
+#0 ↩ System Program — advanceNonce  (ran, then undone)
+#1 ↩ Compute Budget  (ran, then undone)
+#2 ↩ Associated Token Account — createIdempotent · 4,338 CU  (ran, then undone)
+#3 ↩ Associated Token Account — createIdempotent · 5,937 CU  (ran, then undone)
+#4 ✗ proV…CX3u · 403,331 CU  ◀ FAILED HERE — custom program error: 0x177a
+   ├─ ↩ SPL Token — transferChecked
+   ├─ ↩ Meteora DLMM
+   │  ├─ ↩ Meteora DLMM
+   │  ├─ ↩ SPL Token — transferChecked
+   │  ├─ ↩ SPL Token — transferChecked
+   │  └─ ↩ Meteora DLMM
+   ├─ ↩ proV…CX3u
+   ├─ ↩ BiSo…Uypi
+   │  ├─ ↩ SPL Token — transfer
+   │  └─ ↩ SPL Token — transfer
+   ├─ ↩ proV…CX3u
+   ├─ ↩ AQU1…Tz45
+   │  ├─ ↩ SPL Token — transfer
+   │  └─ ↩ SPL Token — transfer
+   ├─ ↩ proV…CX3u
+   ├─ ↩ Raydium CLMM
+   │  ├─ ↩ SPL Token — transferChecked
+   │  └─ ↩ SPL Token — transferChecked
+   └─ ↩ proV…CX3u
+#5 – Compute Budget  (never ran)
+#6 – Compute Budget  (never ran)
+
+   ↩ ran, then undone · ✗ failed · – never ran
+
+failing program   proVF4pMXVaYqmy4NjniPh4pqKNfMmsihgd4wdkCX3u (proV…CX3u) · depth 1
+identified via    first \`failed:\` log frame, cross-checked against stackHeight — CONFIRMED
+anchor error      MinReturnNotReached (6010) — "Min return not reached" · from the AnchorError log line
+custom code       6010 (hex 0x177a)
+balance changes   52Xv…BaiR (signer)  −0.000099684 SOL"
+`;
+
+exports[`committed fixtures > compute-exhausted > renders the golden text serialisation 1`] = `
+"signature         2Z27hPw7y8t7yUcde3csUteNhEkak9KuxzxgMts13UWoNrSY3nGogwSTSFg2HqFtAXctSMoRzWW3LhFB4z2hTxng
+slot              442,373,519 · 2026-08-28T15:54:35.000Z · v0 tx
+status            FAILED
+error             {"InstructionError":[4,"ProgramFailedToComplete"]}
+fee               0.000005246 SOL (charged despite the failure) · 138,010 CU consumed
+
+why               Instruction #4 (3KRa…L8hc) ran out of compute — exceeded CUs meter at BPF instruction.
+
+#0 ↩ System Program — advanceNonce  (ran, then undone)
+#1 ↩ Compute Budget  (ran, then undone)
+#2 ↩ Compute Budget  (ran, then undone)
+#3 ↩ Compute Budget  (ran, then undone)
+#4 ✗ 3KRa…L8hc · 137,410 CU  ◀ FAILED HERE — exceeded CUs meter at BPF instruction
+   ├─ ↩ Jupiter Aggregator v6
+   │  ├─ ↩ BiSo…Uypi
+   │  │  ├─ ↩ SPL Token — transfer
+   │  │  └─ ↩ SPL Token — transfer
+   │  └─ ↩ Jupiter Aggregator v6
+   └─ ↩ Raydium CLMM
+      ├─ ↩ SPL Token — transferChecked
+      └─ ↩ SPL Token — transferChecked
+#5 – Memo  (never ran)
+
+   ↩ ran, then undone · ✗ failed · – never ran
+
+failing program   3KRa5rNoPR9i9eVEnNDJc82Psyw2QBxgncRXU8PoL8hc (3KRa…L8hc) · depth 1
+identified via    first \`failed:\` log frame, cross-checked against stackHeight — CONFIRMED
+balance changes   7777…tdsa (signer)  −0.000005246 SOL"
+`;
+
+exports[`committed fixtures > deep-cpi > renders the golden text serialisation 1`] = `
+"signature         2CyCZ3rVt8jdmQDgJrDTY42y1RffAJ4W3DeYwY429PZk9KBkC8sSdnECjMStgdxuwvbCgNboT2v7hciRh1LvkUV3
+slot              442,373,519 · 2026-08-28T15:54:35.000Z · v0 tx
+status            FAILED
+error             {"InstructionError":[5,{"Custom":14}]}
+fee               0.000105 SOL (charged despite the failure) · 110,337 CU consumed
+
+why               Instruction #5 (Jupiter Aggregator v6) failed 1 level(s) deep in a CPI — QuaN…bBDv reported: custom program error: 0xe.
+
+#0 ↩ Compute Budget  (ran, then undone)
+#1 ↩ Compute Budget  (ran, then undone)
+#2 ↩ Associated Token Account — createIdempotent · 7,338 CU  (ran, then undone)
+#3 ↩ Associated Token Account — createIdempotent · 4,357 CU  (ran, then undone)
+#4 ↩ Associated Token Account — createIdempotent · 13,413 CU  (ran, then undone)
+   ├─ ↩ SPL Token — getAccountDataSize
+   ├─ ↩ System Program — createAccount
+   ├─ ↩ SPL Token — initializeImmutableOwner
+   └─ ↩ SPL Token — initializeAccount3
+#5 ✗ Jupiter Aggregator v6 · 84,929 CU
+   ├─ ↩ REAL…Q5N2
+   │  ├─ ↩ SPL Token — transferChecked
+   │  └─ ↩ SPL Token — transferChecked
+   └─ ✗ QuaN…bBDv · 9,987 CU  ◀ FAILED HERE — custom program error: 0xe
+#6 – SPL Token — closeAccount  (never ran)
+#7 – SPL Token — transfer  (never ran)
+
+   ↩ ran, then undone · ✗ failed · – never ran
+
+failing program   QuaNtZsgYRe5Z9Bk4LZ4cTD9tbkVoyCNf1R2BN9bBDv (QuaN…bBDv) · depth 2
+identified via    first \`failed:\` log frame, cross-checked against stackHeight — CONFIRMED
+custom code       14 (hex 0xe)
+balance changes   FoK3…Mxix (signer)  −0.000105 SOL"
+`;
+
+exports[`committed fixtures > spl-token > renders the golden text serialisation 1`] = `
+"signature         2M7mEfQ2eFyGK4vnnefmkLGBe3kqw8CGYcC51d3S7RfRfa4GcfAMBPzSNy9ZJVZaLR7Lvyz7gLHraadPtVy97LGA
+slot              442,373,959 · 2026-08-28T15:56:59.000Z · v0 tx
+status            FAILED
+error             {"InstructionError":[5,{"Custom":1}]}
+fee               0.000105 SOL (charged despite the failure) · 194,331 CU consumed
+
+why               Instruction #5 (SPL Token) failed: custom program error: 0x1.
+
+#0 ↩ Compute Budget  (ran, then undone)
+#1 ↩ Compute Budget  (ran, then undone)
+#2 ↩ Associated Token Account — createIdempotent · 4,437 CU  (ran, then undone)
+#3 ↩ Associated Token Account — createIdempotent · 17,116 CU  (ran, then undone)
+   ├─ ↩ Token-2022 — getAccountDataSize
+   ├─ ↩ System Program — createAccount
+   ├─ ↩ Token-2022 — initializeImmutableOwner
+   └─ ↩ Token-2022 — initializeAccount3
+#4 ↩ GMGN…SLA1 · 172,297 CU  (ran, then undone)
+   ├─ ↩ Raydium AMM v4
+   │  ├─ ↩ SPL Token — transfer
+   │  └─ ↩ SPL Token — transfer
+   └─ ↩ pAMM…fXEA
+      ├─ ↩ pfee…ojVZ
+      ├─ ↩ Token-2022 — transferChecked
+      ├─ ↩ SPL Token — transferChecked
+      ├─ ↩ SPL Token — transferChecked
+      ├─ ↩ SPL Token — transferChecked
+      ├─ ↩ SPL Token — transferChecked
+      └─ ↩ pAMM…fXEA
+#5 ✗ SPL Token — transfer · 181 CU  ◀ FAILED HERE — custom program error: 0x1
+#6 – System Program — transfer  (never ran)
+
+   ↩ ran, then undone · ✗ failed · – never ran
+
+failing program   TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA (SPL Token) · depth 1
+identified via    first \`failed:\` log frame, cross-checked against stackHeight — CONFIRMED
+custom code       1 (hex 0x1)
+balance changes   2fbi…YuQM (signer)  −0.000105 SOL"
+`;
