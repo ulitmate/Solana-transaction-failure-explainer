@@ -123,7 +123,8 @@ export function classifyFailure(
       );
     }
     walkTree(tree, (node) => {
-      if (desyncedTops.has(node.topIndex)) return; // ordinal matching is untrustworthy there
+      // Ordinal 0 is the top-level frame itself — it cannot desync, so it keeps its annotation.
+      if (node.ordinal > 0 && desyncedTops.has(node.topIndex)) return;
       const f = framesByKey.get(nodeKey(node));
       if (!f) return;
       if (f.consumed !== undefined) node.consumed = f.consumed;
@@ -197,9 +198,14 @@ export function classifyFailure(
   // success = ran then undone · failed = on the failing chain · absent = never invoked.
   const failingFrame = walk?.failing;
   const failingFrameCompiled = failingFrame ? compiledIndexOf(failingFrame) : undefined;
+  // A failing frame inferred from the deepest OPEN frame under truncated logs is a guess,
+  // not evidence — nothing may be confirmed, placed, or blamed on its authority.
+  const failingTrustworthy = failingFrame !== undefined && !(walk?.truncated && walk.failingViaFallback);
   if (failingRoot) {
-    if (walk && failingFrame && failingFrameCompiled === failingTopIndex && !desyncedTops.has(failingTopIndex)) {
-      markSubtree(failingRoot, "never_ran");
+    if (walk && failingFrame && failingTrustworthy && failingFrameCompiled === failingTopIndex && !desyncedTops.has(failingTopIndex)) {
+      // Under truncation, a node with no log frame may simply be past the cut — "never ran"
+      // is only provable when the log stream is complete.
+      markSubtree(failingRoot, walk.truncated ? "unknown" : "never_ran");
       walkTree(tree, (node) => {
         if (node.topIndex !== failingTopIndex) return;
         const f = framesByKey.get(nodeKey(node));
@@ -218,6 +224,16 @@ export function classifyFailure(
     } else {
       failingRoot.state = "failed";
       if (failingRoot.children.length === 0 && !walk) failingRoot.failHere = true;
+      // Even when inner ordinals are unreliable, the ROOT frame (ordinal 0) cannot desync:
+      // if the trustworthy failing frame is the root itself, its marker survives.
+      if (
+        failingFrame &&
+        failingTrustworthy &&
+        failingFrameCompiled === failingTopIndex &&
+        failingFrame.invocationOrdinal === 0
+      ) {
+        failingRoot.failHere = true;
+      }
       if (failingRoot.children.length > 0) {
         for (const child of failingRoot.children) markSubtree(child, "unknown");
         anomalies.push(`states inside instruction #${failingTopIndex} unknown — no reliable log evidence`);
@@ -231,9 +247,13 @@ export function classifyFailure(
   let crossCheck: CrossCheck;
   let crossCheckNote: string | undefined;
   let failingProgram: FailureAnalysis["failingProgram"];
-  if (failingFrame) {
+  if (failingFrame && failingTrustworthy) {
     if (failingFrameCompiled === failingTopIndex) {
       crossCheck = "confirmed";
+      if (desyncedTops.has(failingTopIndex)) {
+        crossCheckNote =
+          "index-level check only — innerInstructions under this instruction are incomplete, so the structural cross-check was unavailable";
+      }
       failingProgram = {
         id: failingFrame.programId,
         label: programLabel(failingFrame.programId),
@@ -247,11 +267,13 @@ export function classifyFailure(
     }
   } else {
     crossCheck = "err_only";
-    crossCheckNote = walk
-      ? logsTruncated
-        ? "logs truncated before any failing frame — failing program cannot be identified from logs"
-        : "no failing frame found in logs — failing program identified from meta.err only"
-      : "no logs available — failing program cannot be identified beyond the top-level instruction";
+    crossCheckNote = failingFrame
+      ? "logs truncated before a definitive `failed:` line — the deepest open frame is a guess; refusing to name a failing program"
+      : walk
+        ? logsTruncated
+          ? "logs truncated before any failing frame — failing program cannot be identified from logs"
+          : "no failing frame found in logs — failing program identified from meta.err only"
+        : "no logs available — failing program cannot be identified beyond the top-level instruction";
     if (
       failingRoot &&
       failingRoot.children.length === 0 &&
@@ -266,9 +288,10 @@ export function classifyFailure(
   }
 
   // Anchor resolution, log-line first: the failing program already printed name, number and message.
-  const anchorError = failingFrame
-    ? walk?.anchorErrors.filter((a) => failingFrame.logs.includes(a.raw)).at(-1)
-    : undefined;
+  const anchorError =
+    failingFrame && failingTrustworthy
+      ? walk?.anchorErrors.filter((a) => failingFrame.logs.includes(a.raw)).at(-1)
+      : undefined;
 
   const errorText = anchorError
     ? `${anchorError.code} (${anchorError.number}): ${anchorError.message}`

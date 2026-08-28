@@ -126,16 +126,69 @@ describe("classifyFailure", () => {
     expect(analysis.failingProgram?.id).toBe(OTHER);
   });
 
-  it("flags exhaustion from meta.err even when logs are silent about it", () => {
+  it("flags exhaustion from meta.err even when the logs never say so", () => {
+    // The failure text carries no exhaustion wording — only meta.err knows.
     const { analysis } = decodeTransaction(
       fakeTx(
         [ROUTER],
         {},
-        [`Program ${ROUTER} invoke [1]`, `Program ${ROUTER} failed: exceeded CUs meter at BPF instruction`],
+        [`Program ${ROUTER} invoke [1]`, `Program ${ROUTER} failed: Program failed to complete`],
         { InstructionError: [0, "ComputationalBudgetExceeded"] },
       ),
     );
     expect(analysis.computeExhausted).toBe(true);
     expect(analysis.headline).toContain("ran out of compute");
+  });
+
+  it("does not mark provably-executed steps never_ran when logs are truncated", () => {
+    // innerInstructions record three executed CPIs; logs cut off after the first invoke plus a
+    // bare failed-to-complete line. The later steps DID run — "never ran" would be a lie, and
+    // the deepest-open-frame guess must not be blessed as the failing program.
+    const { tree, analysis } = decodeTransaction(
+      fakeTx(
+        [ROUTER],
+        { 0: [ix(TOKEN, 2), ix(OTHER, 2), ix(TOKEN, 2)] },
+        [
+          `Program ${ROUTER} invoke [1]`,
+          `Program ${TOKEN} invoke [2]`,
+          "Program failed to complete: exceeded CUs meter at BPF instruction",
+          "Log truncated",
+        ],
+        { InstructionError: [0, "ComputationalBudgetExceeded"] },
+      ),
+    );
+    const nodes = collect(tree);
+    expect(nodes.every((n) => n.state !== "never_ran")).toBe(true);
+    expect(nodes.some((n) => n.failHere)).toBe(false);
+    expect(analysis.failingProgram).toBeUndefined();
+    expect(analysis.crossCheck).toBe("err_only");
+    expect(analysis.crossCheckNote).toContain("guess");
+  });
+
+  it("keeps the root failure marker and CU when inner entries desync but the root itself failed", () => {
+    // Logs show two inner calls; the tree recorded only one — inner ordinals are unreliable,
+    // but ordinal 0 (the root frame) cannot desync, so its CU and marker must survive.
+    const { tree, analysis } = decodeTransaction(
+      fakeTx(
+        [ROUTER],
+        { 0: [ix(TOKEN, 2)] },
+        [
+          `Program ${ROUTER} invoke [1]`,
+          `Program ${TOKEN} invoke [2]`,
+          `Program ${TOKEN} success`,
+          `Program ${OTHER} invoke [2]`,
+          `Program ${OTHER} success`,
+          `Program ${ROUTER} consumed 900 of 200000 compute units`,
+          `Program ${ROUTER} failed: custom program error: 0x1771`,
+        ],
+        { InstructionError: [0, { Custom: 6001 }] },
+      ),
+    );
+    expect(tree.roots[0]!.failHere).toBe(true);
+    expect(tree.roots[0]!.consumed).toBe(900);
+    expect(tree.roots[0]!.children.every((c) => c.state === "unknown")).toBe(true);
+    expect(analysis.failingProgram?.id).toBe(ROUTER);
+    expect(analysis.crossCheck).toBe("confirmed");
+    expect(analysis.crossCheckNote).toContain("index-level");
   });
 });

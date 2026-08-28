@@ -98,7 +98,8 @@ export function renderText(
   if (analysis.errRaw !== null) out.push(`${pad("error")}${JSON.stringify(analysis.errRaw)}`);
   if (meta) {
     const cu = meta.computeUnitsConsumed !== undefined ? ` · ${num(meta.computeUnitsConsumed)} CU consumed` : "";
-    out.push(`${pad("fee")}${sol(meta.fee)} (charged despite the failure)${cu}`);
+    const feeNote = analysis.status === "failed" ? " (charged despite the failure)" : "";
+    out.push(`${pad("fee")}${sol(meta.fee)}${feeNote}${cu}`);
   }
   out.push("");
   out.push(`${pad("why")}${analysis.headline}`);
