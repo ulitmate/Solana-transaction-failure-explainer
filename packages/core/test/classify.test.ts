@@ -165,6 +165,23 @@ describe("classifyFailure", () => {
     expect(analysis.crossCheckNote).toContain("guess");
   });
 
+  it("names the top-level program without a contradictory note when nothing points deeper", () => {
+    // Truncated fallback at the root, and neither logs nor the tree show any CPI: the depth-1
+    // claim stands, so the caveat must say "limited to", not "refusing".
+    const { analysis } = decodeTransaction(
+      fakeTx(
+        [ROUTER],
+        {},
+        [`Program ${ROUTER} invoke [1]`, "Program failed to complete: exceeded CUs meter", "Log truncated"],
+        { InstructionError: [0, "ComputationalBudgetExceeded"] },
+      ),
+    );
+    expect(analysis.crossCheck).toBe("err_only");
+    expect(analysis.failingProgram?.depth).toBe(1);
+    expect(analysis.crossCheckNote).toContain("limited to the top-level program");
+    expect(analysis.crossCheckNote).not.toContain("refusing");
+  });
+
   it("keeps the root failure marker and CU when inner entries desync but the root itself failed", () => {
     // Logs show two inner calls; the tree recorded only one — inner ordinals are unreliable,
     // but ordinal 0 (the root frame) cannot desync, so its CU and marker must survive.

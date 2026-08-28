@@ -284,6 +284,12 @@ export function classifyFailure(
     ) {
       // No CPIs recorded anywhere for this instruction: the top-level program is the only candidate.
       failingProgram = { id: failingRoot.programId, label: programLabel(failingRoot.programId), depth: 1 };
+      if (failingFrame) {
+        // Both evidence sources are silent on deeper activity, so naming the top is defensible —
+        // the note must not simultaneously claim we refused.
+        crossCheckNote =
+          "logs truncated before a definitive `failed:` line — identification limited to the top-level program";
+      }
     }
   }
 
