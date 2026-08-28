@@ -14,6 +14,10 @@ export const PROGRAM_NAMES: Record<string, string> = {
   LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo: "Meteora DLMM",
   "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P": "Pump.fun",
   MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr: "Memo",
+  dRiftyHA798LAtfsFy6iWBSyuZAdKm5irVJU29hHGE: "Drift v2",
+  DCA265Vj8a9CEuX1eb1LWRnDT7uK6q1xMipnNyatn23M: "Jupiter DCA",
+  MFv2hWf31Z9kbCa1snEPYctwafyhdvnV7FZnsebVacA: "marginfi v2",
+  So1endDq2YkqhipRh3WViPa8hdiSpxWy6z3Z6tMCpAo: "Solend",
 };
 
 /** Precompiles verify before execution and emit no invoke/success log lines, which shifts log-derived indices. */

@@ -1,0 +1,42 @@
+[
+  {
+    "cls": "compute-exhausted",
+    "signature": "2Z27hPw7y8t7yUcde3csUteNhEkak9KuxzxgMts13UWoNrSY3nGogwSTSFg2HqFtAXctSMoRzWW3LhFB4z2hTxng",
+    "slot": 442373519,
+    "blockTime": 1787932475,
+    "scanProgram": "Jupiter Aggregator v6",
+    "headline": "Instruction #4 (3KRa…L8hc) ran out of compute — exceeded CUs meter at BPF instruction."
+  },
+  {
+    "cls": "anchor-constraint",
+    "signature": "622vdcvGPw5EtWbWPgMpKHrstYaii8ssWFoKkK1jJLRQDCSwhn4tD88fZ92khrnXJNyZCg7yHTeT8u2yDgVPk46U",
+    "slot": 442375242,
+    "blockTime": 1787933032,
+    "scanProgram": "Orca Whirlpool",
+    "headline": "Instruction #2 (3FhP…vUsm) failed: DeadlineExceeded (2015): Current slot exceeds deadline."
+  },
+  {
+    "cls": "anchor-custom",
+    "signature": "2hirAEtVxpEEQwHH54FS3cWFC4mGAm2zDuhADwJ56VYiUeiaNEtaMsAekQdEyR4EMxzKk9JRBAuDRqRvGck9ANAA",
+    "slot": 442373788,
+    "blockTime": 1787932562,
+    "scanProgram": "Meteora DLMM",
+    "headline": "Instruction #4 (proV…CX3u) failed: MinReturnNotReached (6010): Min return not reached."
+  },
+  {
+    "cls": "spl-token",
+    "signature": "2M7mEfQ2eFyGK4vnnefmkLGBe3kqw8CGYcC51d3S7RfRfa4GcfAMBPzSNy9ZJVZaLR7Lvyz7gLHraadPtVy97LGA",
+    "slot": 442373959,
+    "blockTime": 1787932619,
+    "scanProgram": "Raydium AMM v4",
+    "headline": "Instruction #5 (SPL Token) failed: custom program error: 0x1."
+  },
+  {
+    "cls": "deep-cpi",
+    "signature": "2CyCZ3rVt8jdmQDgJrDTY42y1RffAJ4W3DeYwY429PZk9KBkC8sSdnECjMStgdxuwvbCgNboT2v7hciRh1LvkUV3",
+    "slot": 442373519,
+    "blockTime": 1787932475,
+    "scanProgram": "Jupiter Aggregator v6",
+    "headline": "Instruction #5 (Jupiter Aggregator v6) failed 1 level(s) deep in a CPI — QuaN…bBDv reported: custom program error: 0xe."
+  }
+]
