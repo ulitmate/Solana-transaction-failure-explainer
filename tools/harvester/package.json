@@ -1,0 +1,10 @@
+{
+  "name": "@txwhy/harvester",
+  "version": "0.0.1",
+  "description": "Committed tool: page busy programs for failed transactions and save them as test fixtures.",
+  "type": "module",
+  "license": "MIT",
+  "dependencies": {
+    "@txwhy/core": "workspace:*"
+  }
+}

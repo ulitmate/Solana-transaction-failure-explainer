@@ -1,0 +1,23 @@
+{
+  "name": "txwhy",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Paste a failed Solana transaction signature. Get back why it failed — in plain language, with a picture.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "spike": "tsx packages/core/src/bin/spike.ts",
+    "harvest": "tsx tools/harvester/src/harvest.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^26.4.0",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11"
+  }
+}

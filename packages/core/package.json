@@ -1,0 +1,10 @@
+{
+  "name": "@txwhy/core",
+  "version": "0.0.1",
+  "description": "Decoder core: fetch a Solana transaction, rebuild its CPI tree, find where and why it failed.",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}
