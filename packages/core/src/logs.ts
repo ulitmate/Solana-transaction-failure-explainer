@@ -47,6 +47,8 @@ export interface LogWalk {
   failing?: LogFrame;
   /** Bare `Program failed to complete:` line — carries no id; the deepest open frame is the culprit. */
   failedToComplete?: { message: string };
+  /** True when `failing` was INFERRED from the deepest open frame rather than closed by a `failed:` line. */
+  failingViaFallback: boolean;
   anchorErrors: AnchorErrorInfo[];
   truncated: boolean;
   computeExhausted: boolean;
@@ -182,10 +184,12 @@ export function walkLogs(logMessages: string[]): LogWalk {
 
   // If no `failed:` line ever closed the failing frame (seen with bare failed-to-complete + truncation),
   // fall back to the deepest frame that was open when the bare line appeared.
+  let failingViaFallback = false;
   if (!failing && failedToComplete && failedToCompleteFrame) {
     failedToCompleteFrame.outcome = "failed";
     failedToCompleteFrame.failMessage = failedToComplete.message;
     failing = failedToCompleteFrame;
+    failingViaFallback = true;
   }
 
   // Only the error TEXT proves exhaustion. `consumed >= budget` on a failed frame does not:
@@ -199,6 +203,7 @@ export function walkLogs(logMessages: string[]): LogWalk {
     frames,
     ...(failing ? { failing } : {}),
     ...(failedToComplete ? { failedToComplete } : {}),
+    failingViaFallback,
     anchorErrors,
     truncated,
     computeExhausted,

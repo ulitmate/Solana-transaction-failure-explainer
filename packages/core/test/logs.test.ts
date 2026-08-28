@@ -65,6 +65,7 @@ describe("walkLogs", () => {
     const walk = walkLogs([`Program ${JUP} invoke [1]`, "Program failed to complete: oops"]);
     expect(walk.failing?.programId).toBe(JUP);
     expect(walk.failing?.outcome).toBe("failed");
+    expect(walk.failingViaFallback).toBe(true); // inferred, not closed by a `failed:` line
   });
 
   it("does not call a failure compute exhaustion just because consumed == budget", () => {
