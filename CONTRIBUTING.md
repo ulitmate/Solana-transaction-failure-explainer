@@ -13,3 +13,10 @@ txwhy is at the working-spike stage. While the foundations are moving fast:
 The error corpus — the project's durable deliverable — will ship with its own contribution
 guide, JSON schema, and CI validation. Until that lands, corpus entries aren't being accepted,
 so nobody's careful work sits in limbo.
+
+## Conduct and security
+
+Everyone participating is expected to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+Security problems go through [private vulnerability reporting](SECURITY.md), never public
+issues. Never include secrets in a contribution: no RPC URLs with embedded API keys, no
+keypairs, no `.env` contents (`.env.example` shows the shape).

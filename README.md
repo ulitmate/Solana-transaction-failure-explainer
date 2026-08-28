@@ -107,6 +107,8 @@ Weekly public updates in [`docs/updates`](docs/) once funded work begins.
 
 Early stage — issues and discussion are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md). The corpus contribution guide ships with the corpus itself.
 
+The project follows the [Contributor Covenant](CODE_OF_CONDUCT.md). Security reports go through [private vulnerability reporting](SECURITY.md) — never public issues.
+
 ## Licence
 
 Code: [MIT](LICENSE). The error corpus, when it ships, will be **CC0** — attribution appreciated, never required.

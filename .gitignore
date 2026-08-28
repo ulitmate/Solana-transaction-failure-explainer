@@ -1,6 +1,17 @@
 node_modules/
 dist/
-.env
-.env.*
 *.log
 .DS_Store
+
+# Environment — .env holds secrets (RPC URLs with embedded keys); only the example is tracked
+.env
+.env.*
+!.env.example
+
+# Solana key material — never commit keypairs, wherever they turn up
+*keypair*.json
+id.json
+wallet.json
+wallet-*.json
+.config/
+*.pem
