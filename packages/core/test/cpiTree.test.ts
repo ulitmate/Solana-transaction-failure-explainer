@@ -61,4 +61,12 @@ describe("buildCpiTree", () => {
     expect(tree.anomalies.some((a) => a.includes("skips levels"))).toBe(true);
     expect(tree.roots[0]!.children).toHaveLength(1);
   });
+
+  it("clamps malformed stackHeights (0, negative, 1, fractional) instead of hanging", () => {
+    // A stackHeight <= 0 used to spin the pop loop forever — this test hangs if that regresses.
+    const tree = buildCpiTree(fakeResult(["A"], { 0: [ix("W", 0), ix("X", -3), ix("Y", 1), ix("Z", 2.5)] }));
+    expect(tree.roots[0]!.children).toHaveLength(4);
+    expect(tree.roots[0]!.children.every((c) => c.depth === 2)).toBe(true);
+    expect(tree.anomalies.filter((a) => a.includes("invalid stackHeight"))).toHaveLength(4);
+  });
 });

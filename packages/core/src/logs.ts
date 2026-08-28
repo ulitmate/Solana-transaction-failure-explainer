@@ -188,11 +188,12 @@ export function walkLogs(logMessages: string[]): LogWalk {
     failing = failedToCompleteFrame;
   }
 
-  const computeExhausted =
-    /exceeded CUs meter|exceeded maximum number of instructions/i.test(
-      (failedToComplete?.message ?? "") + (failing?.failMessage ?? ""),
-    ) ||
-    frames.some((f) => f.outcome !== "success" && f.consumed !== undefined && f.budget !== undefined && f.consumed >= f.budget);
+  // Only the error TEXT proves exhaustion. `consumed >= budget` on a failed frame does not:
+  // a program can burn its whole budget and then fail for an unrelated reason (e.g. slippage),
+  // and calling that "ran out of compute" would be a confidently wrong diagnosis.
+  const computeExhausted = /exceeded CUs meter|exceeded maximum number of instructions|computational budget/i.test(
+    `${failedToComplete?.message ?? ""} ${failing?.failMessage ?? ""}`,
+  );
 
   return {
     frames,
