@@ -62,7 +62,6 @@ function describeTxLevelErr(err: TransactionErr): string {
   return key ? `${key} ${JSON.stringify((err as Record<string, unknown>)[key])}` : JSON.stringify(err);
 }
 
-const frameKey = (f: { topIndex: number; invocationOrdinal: number }) => `${f.topIndex}:${f.invocationOrdinal}`;
 const nodeKey = (n: StepNode) => `${n.topIndex}:${n.ordinal}`;
 
 function markSubtree(node: StepNode, state: StepNode["state"]): void {
@@ -82,30 +81,55 @@ export function classifyFailure(
   const err = result.meta?.err ?? null;
   if (result.meta == null) anomalies.push("meta missing from RPC response");
 
-  // Annotate compute + per-frame error text onto the tree, and detect sparse omissions (§ caveat).
+  // Precompiles verify before execution and emit NO log frames, so a logged `invoke [1]`
+  // ordinal is an index into the NON-precompile instructions only. Reconcile every log-derived
+  // top index to the compiled index meta.err speaks in, instead of comparing raw and refusing.
+  const loggedToCompiled: number[] = [];
+  result.transaction.message.instructions.forEach((ix, i) => {
+    if (!PRECOMPILE_IDS.has(ix.programId)) loggedToCompiled.push(i);
+  });
+  const compiledIndexOf = (f: LogFrame): number | undefined => loggedToCompiled[f.topIndex];
+  if (loggedToCompiled.length !== result.transaction.message.instructions.length) {
+    anomalies.push("precompile instruction(s) present — they emit no log frames; log indices reconciled to compiled indices");
+  }
+
+  // Annotate compute + per-frame error text onto the tree — but first detect sparse-omission
+  // DESYNC: if any logged inner frame has no tree node, ordinals inside that instruction are
+  // shifted and unreliable, so nothing there may be matched by ordinal (§ caveat).
   const framesByKey = new Map<string, LogFrame>();
+  const desyncedTops = new Set<number>();
   if (walk) {
-    for (const f of walk.frames) framesByKey.set(frameKey(f), f);
+    for (const f of walk.frames) {
+      const ci = compiledIndexOf(f);
+      if (ci === undefined) {
+        anomalies.push(`log frame at logged top index ${f.topIndex} maps to no compiled instruction — log indices unreliable`);
+        continue;
+      }
+      framesByKey.set(`${ci}:${f.invocationOrdinal}`, f);
+    }
+    const innerNodeKeys = new Set<string>();
+    walkTree(tree, (n) => {
+      if (n.ordinal > 0) innerNodeKeys.add(nodeKey(n));
+    });
+    for (const f of walk.frames) {
+      const ci = compiledIndexOf(f);
+      if (ci !== undefined && f.invocationOrdinal > 0 && !innerNodeKeys.has(`${ci}:${f.invocationOrdinal}`)) {
+        desyncedTops.add(ci);
+      }
+    }
+    if (desyncedTops.size > 0) {
+      anomalies.push(
+        `innerInstructions omitted invoked frame(s) under #${[...desyncedTops].sort((a, b) => a - b).join(", #")} — per-step detail there degraded to log evidence`,
+      );
+    }
     walkTree(tree, (node) => {
+      if (desyncedTops.has(node.topIndex)) return; // ordinal matching is untrustworthy there
       const f = framesByKey.get(nodeKey(node));
       if (!f) return;
       if (f.consumed !== undefined) node.consumed = f.consumed;
       if (f.budget !== undefined) node.budget = f.budget;
       if (f.failMessage !== undefined) node.errorText = f.failMessage;
     });
-    const innerNodeKeys = new Set<string>();
-    walkTree(tree, (n) => {
-      if (n.ordinal > 0) innerNodeKeys.add(nodeKey(n));
-    });
-    const missing = walk.frames.filter((f) => f.invocationOrdinal > 0 && !innerNodeKeys.has(frameKey(f)));
-    if (missing.length > 0 && !walk.truncated) {
-      anomalies.push(
-        `innerInstructions omitted ${missing.length} invoked frame(s) (e.g. #${missing[0]!.topIndex}.${missing[0]!.invocationOrdinal}) — structure degraded to log evidence`,
-      );
-    }
-  }
-  if (result.transaction.message.instructions.some((ix) => PRECOMPILE_IDS.has(ix.programId))) {
-    anomalies.push("precompile instruction(s) present — they emit no log frames, so log-derived indices can shift");
   }
 
   const logsTruncated = walk?.truncated ?? false;
@@ -152,6 +176,9 @@ export function classifyFailure(
     typeof detail === "object" && "Custom" in detail && typeof detail.Custom === "number"
       ? detail.Custom
       : undefined;
+  // meta.err itself is exhaustion evidence, alongside the log text.
+  const instructionComputeExhausted =
+    computeExhausted || (typeof detail === "string" && detail === "ComputationalBudgetExceeded");
 
   const failingRoot = tree.roots[failingTopIndex];
   if (!failingRoot) {
@@ -169,8 +196,9 @@ export function classifyFailure(
   // Inside the failing instruction: log outcomes are the evidence.
   // success = ran then undone · failed = on the failing chain · absent = never invoked.
   const failingFrame = walk?.failing;
+  const failingFrameCompiled = failingFrame ? compiledIndexOf(failingFrame) : undefined;
   if (failingRoot) {
-    if (walk && failingFrame && failingFrame.topIndex === failingTopIndex) {
+    if (walk && failingFrame && failingFrameCompiled === failingTopIndex && !desyncedTops.has(failingTopIndex)) {
       markSubtree(failingRoot, "never_ran");
       walkTree(tree, (node) => {
         if (node.topIndex !== failingTopIndex) return;
@@ -184,7 +212,7 @@ export function classifyFailure(
         if (failNode.state === "unknown") failNode.state = "failed";
       } else {
         anomalies.push(
-          `failing frame #${failingFrame.topIndex}.${failingFrame.invocationOrdinal} has no innerInstructions entry — the documented omission; failure placed from logs only`,
+          `failing frame under #${failingFrameCompiled}.${failingFrame.invocationOrdinal} has no innerInstructions entry — the documented omission; failure placed from logs only`,
         );
       }
     } else {
@@ -192,7 +220,7 @@ export function classifyFailure(
       if (failingRoot.children.length === 0 && !walk) failingRoot.failHere = true;
       if (failingRoot.children.length > 0) {
         for (const child of failingRoot.children) markSubtree(child, "unknown");
-        anomalies.push(`states inside instruction #${failingTopIndex} unknown — no usable log evidence`);
+        anomalies.push(`states inside instruction #${failingTopIndex} unknown — no reliable log evidence`);
       } else if (!walk) {
         anomalies.push("no logs returned — failure placed from meta.err alone");
       }
@@ -204,7 +232,7 @@ export function classifyFailure(
   let crossCheckNote: string | undefined;
   let failingProgram: FailureAnalysis["failingProgram"];
   if (failingFrame) {
-    if (failingFrame.topIndex === failingTopIndex) {
+    if (failingFrameCompiled === failingTopIndex) {
       crossCheck = "confirmed";
       failingProgram = {
         id: failingFrame.programId,
@@ -214,8 +242,8 @@ export function classifyFailure(
     } else {
       crossCheck = "disagreement";
       crossCheckNote =
-        `meta.err names top-level instruction #${failingTopIndex}, but the first failing log frame sits under ` +
-        `#${failingFrame.topIndex} (${programLabel(failingFrame.programId)}). Refusing to name a failing program — raw evidence below.`;
+        `meta.err names top-level instruction #${failingTopIndex}, but the first failing log frame maps to ` +
+        `#${failingFrameCompiled ?? "?"} (${programLabel(failingFrame.programId)}). Refusing to name a failing program — raw evidence below.`;
     }
   } else {
     crossCheck = "err_only";
@@ -224,8 +252,15 @@ export function classifyFailure(
         ? "logs truncated before any failing frame — failing program cannot be identified from logs"
         : "no failing frame found in logs — failing program identified from meta.err only"
       : "no logs available — failing program cannot be identified beyond the top-level instruction";
-    if (failingRoot && failingRoot.children.length === 0 && tree.innerPresentFor.indexOf(failingTopIndex) === -1) {
-      // No CPIs recorded for this instruction: the top-level program itself is the only candidate.
+    if (
+      failingRoot &&
+      failingRoot.children.length === 0 &&
+      tree.innerPresentFor.indexOf(failingTopIndex) === -1 &&
+      // The tree being silent is NOT proof there was no CPI: the failing entry can be omitted.
+      // If any log frame shows a deeper invocation under this instruction, refuse to blame the top.
+      !walk?.frames.some((f) => compiledIndexOf(f) === failingTopIndex && f.height > 1)
+    ) {
+      // No CPIs recorded anywhere for this instruction: the top-level program is the only candidate.
       failingProgram = { id: failingRoot.programId, label: programLabel(failingRoot.programId), depth: 1 };
     }
   }
@@ -241,7 +276,7 @@ export function classifyFailure(
 
   const topLabel = failingRoot ? programLabel(failingRoot.programId) : `#${failingTopIndex}`;
   let headline: string;
-  if (computeExhausted) {
+  if (instructionComputeExhausted) {
     headline = `Instruction #${failingTopIndex} (${topLabel}) ran out of compute — ${errorText}.`;
   } else if (crossCheck === "disagreement") {
     headline = `Instruction #${failingTopIndex} failed, but the evidence disagrees on where — see raw evidence.`;
@@ -266,7 +301,7 @@ export function classifyFailure(
     ...(anchorError ? { anchorError } : {}),
     errorText,
     headline,
-    computeExhausted,
+    computeExhausted: instructionComputeExhausted,
     logsTruncated,
     anomalies,
   };

@@ -67,6 +67,17 @@ describe("walkLogs", () => {
     expect(walk.failing?.outcome).toBe("failed");
   });
 
+  it("does not call a failure compute exhaustion just because consumed == budget", () => {
+    // A program can burn its whole budget and then fail for an unrelated reason (slippage).
+    const walk = walkLogs([
+      `Program ${JUP} invoke [1]`,
+      `Program ${JUP} consumed 200000 of 200000 compute units`,
+      `Program ${JUP} failed: custom program error: 0x1771`,
+    ]);
+    expect(walk.computeExhausted).toBe(false);
+    expect(walk.failing?.programId).toBe(JUP);
+  });
+
   it("degrades honestly on truncation instead of inventing outcomes", () => {
     const walk = walkLogs([`Program ${JUP} invoke [1]`, `Program ${WHIRL} invoke [2]`, "Log truncated"]);
     expect(walk.truncated).toBe(true);

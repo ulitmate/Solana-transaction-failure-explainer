@@ -63,6 +63,11 @@ export function buildCpiTree(result: GetTransactionResult): CpiTree {
       if (height === null) {
         anomalies.push(`#${topIndex}.${k + 1}: stackHeight missing (old transaction?) — assuming depth 2`);
         height = 2;
+      } else if (height < 2 || !Number.isInteger(height)) {
+        // An inner instruction can never be at depth < 2; a 0/negative/fractional value is
+        // malformed RPC data — and unclamped it would spin the pop loop forever.
+        anomalies.push(`#${topIndex}.${k + 1}: invalid stackHeight ${height} — clamped to depth 2`);
+        height = 2;
       }
       while (stack.length >= height) stack.pop();
       if (stack.length !== height - 1) {

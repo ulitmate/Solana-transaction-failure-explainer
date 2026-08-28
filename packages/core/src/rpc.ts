@@ -6,6 +6,8 @@ export class RpcError extends Error {
   constructor(
     message: string,
     public readonly code?: number,
+    /** True for JSON-RPC error responses — a definitive answer from the node, never retried. */
+    public readonly definitive: boolean = false,
   ) {
     super(message);
     this.name = "RpcError";
@@ -51,11 +53,11 @@ export class RpcClient {
           await sleep(Math.max(retryAfter, 500 * 2 ** attempt));
           continue;
         }
-        const body = (await res.json()) as { result?: T; error?: { code: number; message: string } };
-        if (body.error) throw new RpcError(`${method}: ${body.error.message}`, body.error.code);
+        const body = (await res.json()) as { result?: T; error?: { code?: number; message: string } };
+        if (body.error) throw new RpcError(`${method}: ${body.error.message}`, body.error.code, true);
         return body.result as T;
       } catch (e) {
-        if (e instanceof RpcError && e.code !== undefined) throw e;
+        if (e instanceof RpcError && e.definitive) throw e;
         if (attempt >= maxRetries) throw e;
         await sleep(500 * 2 ** attempt);
       }
